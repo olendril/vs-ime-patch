@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>InterestingMeMaterialNeedsFurnacePatch</AssemblyName>
+    <RootNamespace>InterestingMeMaterialNeedsFurnacePatch</RootNamespace>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <EnableTargetingPackDownload>false</EnableTargetingPackDownload>
+    <EnableRuntimePackDownload>false</EnableRuntimePackDownload>
+    <DisableTransitiveFrameworkReferenceDownloads>true</DisableTransitiveFrameworkReferenceDownloads>
+    <VintageStoryPath Condition="'$(VintageStoryPath)' == ''">$(VINTAGE_STORY_PATH)</VintageStoryPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="VintagestoryAPI" HintPath="$(VintageStoryPath)/VintagestoryAPI.dll" Private="false" />
+    <Reference Include="0Harmony" HintPath="$(VintageStoryPath)/Lib/0Harmony.dll" Private="false" />
+  </ItemGroup>
+
+  <Target Name="RequireVintageStoryReferences" BeforeTargets="CoreCompile">
+    <Error Condition="'$(VintageStoryPath)' == ''" Text="Set VintageStoryPath or VINTAGE_STORY_PATH to a Vintage Story installation before building." />
+    <Error Condition="'$(VintageStoryPath)' != '' and !Exists('$(VintageStoryPath)/VintagestoryAPI.dll')" Text="Vintage Story API reference not found under '$(VintageStoryPath)'." />
+    <Error Condition="'$(VintageStoryPath)' != '' and !Exists('$(VintageStoryPath)/Lib/0Harmony.dll')" Text="Harmony reference not found under '$(VintageStoryPath)/Lib'." />
+  </Target>
+
+  <Target Name="CopyModManifest" AfterTargets="Build">
+    <Copy SourceFiles="$(MSBuildProjectDirectory)/../modinfo.json" DestinationFolder="$(TargetDir)" />
+  </Target>
+</Project>

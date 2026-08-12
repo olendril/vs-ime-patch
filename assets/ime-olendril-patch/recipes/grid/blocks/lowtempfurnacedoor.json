@@ -1,0 +1,209 @@
+[
+  {
+    "ingredientPattern": "CCC,CCC,C_C",
+    "ingredients": {
+      "C": { "type": "block", "code": "game:mudbrick-light", "quantity": 2 }
+    },
+    "width": 3,
+    "height": 3,
+    "output": { "type": "block", "code": "interestingme:lowtempfurnacedoor-closed-north", "quantity": 1 }
+  },
+  {
+    "ingredientPattern": "CCC,CCC,C_C",
+    "ingredients": {
+      "C": { "type": "block", "code": "game:mudbrick-dark", "quantity": 2 }
+    },
+    "width": 3,
+    "height": 3,
+    "output": { "type": "block", "code": "interestingme:lowtempfurnacedoor-closed-north", "quantity": 1 }
+  },
+  {
+    "ingredientPattern": "CCC,CCC,C_C",
+    "ingredients": {
+      "C": { "type": "block", "code": "materialneeds:brownmudbrick-light", "quantity": 2 }
+    },
+    "width": 3,
+    "height": 3,
+    "output": { "type": "block", "code": "interestingme:lowtempfurnacedoor-closed-north", "quantity": 1 }
+  },
+  {
+    "ingredientPattern": "CCC,CCC,C_C",
+    "ingredients": {
+      "C": { "type": "block", "code": "materialneeds:brownmudbrick-dark", "quantity": 2 }
+    },
+    "width": 3,
+    "height": 3,
+    "output": { "type": "block", "code": "interestingme:lowtempfurnacedoor-closed-north", "quantity": 1 }
+  },
+  {
+    "ingredientPattern": "CCC,CCC,C_C",
+    "ingredients": {
+      "C": { "type": "block", "code": "materialneeds:graymudbrick-light", "quantity": 2 }
+    },
+    "width": 3,
+    "height": 3,
+    "output": { "type": "block", "code": "interestingme:lowtempfurnacedoor-closed-north", "quantity": 1 }
+  },
+  {
+    "ingredientPattern": "CCC,CCC,C_C",
+    "ingredients": {
+      "C": { "type": "block", "code": "materialneeds:graymudbrick-dark", "quantity": 2 }
+    },
+    "width": 3,
+    "height": 3,
+    "output": { "type": "block", "code": "interestingme:lowtempfurnacedoor-closed-north", "quantity": 1 }
+  },
+  {
+    "ingredientPattern": "CCC,CCC,C_C",
+    "ingredients": {
+      "C": { "type": "block", "code": "materialneeds:oxbloodmudbrick-light", "quantity": 2 }
+    },
+    "width": 3,
+    "height": 3,
+    "output": { "type": "block", "code": "interestingme:lowtempfurnacedoor-closed-north", "quantity": 1 }
+  },
+  {
+    "ingredientPattern": "CCC,CCC,C_C",
+    "ingredients": {
+      "C": { "type": "block", "code": "materialneeds:oxbloodmudbrick-dark", "quantity": 2 }
+    },
+    "width": 3,
+    "height": 3,
+    "output": { "type": "block", "code": "interestingme:lowtempfurnacedoor-closed-north", "quantity": 1 }
+  },
+  {
+    "ingredientPattern": "CCC,CCC,C_C",
+    "ingredients": {
+      "C": { "type": "block", "code": "materialneeds:oystermudbrick-light", "quantity": 2 }
+    },
+    "width": 3,
+    "height": 3,
+    "output": { "type": "block", "code": "interestingme:lowtempfurnacedoor-closed-north", "quantity": 1 }
+  },
+  {
+    "ingredientPattern": "CCC,CCC,C_C",
+    "ingredients": {
+      "C": { "type": "block", "code": "materialneeds:oystermudbrick-dark", "quantity": 2 }
+    },
+    "width": 3,
+    "height": 3,
+    "output": { "type": "block", "code": "interestingme:lowtempfurnacedoor-closed-north", "quantity": 1 }
+  },
+  {
+    "ingredientPattern": "CCC,CCC,C_C",
+    "ingredients": {
+      "C": { "type": "block", "code": "materialneeds:redmudbrick-light", "quantity": 2 }
+    },
+    "width": 3,
+    "height": 3,
+    "output": { "type": "block", "code": "interestingme:lowtempfurnacedoor-closed-north", "quantity": 1 }
+  },
+  {
+    "ingredientPattern": "CCC,CCC,C_C",
+    "ingredients": {
+      "C": { "type": "block", "code": "materialneeds:redmudbrick-dark", "quantity": 2 }
+    },
+    "width": 3,
+    "height": 3,
+    "output": { "type": "block", "code": "interestingme:lowtempfurnacedoor-closed-north", "quantity": 1 }
+  },
+  {
+    "ingredientPattern": "CCC,CCC,C_C",
+    "ingredients": {
+      "C": { "type": "block", "code": "bricklayers:mudbricks-ash", "quantity": 2 }
+    },
+    "width": 3,
+    "height": 3,
+    "output": { "type": "block", "code": "interestingme:lowtempfurnacedoor-closed-north", "quantity": 1 }
+  },
+  {
+    "ingredientPattern": "CCC,CCC,C_C",
+    "ingredients": {
+      "C": { "type": "block", "code": "bricklayers:mudbricks-blue", "quantity": 2 }
+    },
+    "width": 3,
+    "height": 3,
+    "output": { "type": "block", "code": "interestingme:lowtempfurnacedoor-closed-north", "quantity": 1 }
+  },
+  {
+    "ingredientPattern": "CCC,CCC,C_C",
+    "ingredients": {
+      "C": { "type": "block", "code": "bricklayers:mudbricks-brown", "quantity": 2 }
+    },
+    "width": 3,
+    "height": 3,
+    "output": { "type": "block", "code": "interestingme:lowtempfurnacedoor-closed-north", "quantity": 1 }
+  },
+  {
+    "ingredientPattern": "CCC,CCC,C_C",
+    "ingredients": {
+      "C": { "type": "block", "code": "bricklayers:mudbricks-browngolden", "quantity": 2 }
+    },
+    "width": 3,
+    "height": 3,
+    "output": { "type": "block", "code": "interestingme:lowtempfurnacedoor-closed-north", "quantity": 1 }
+  },
+  {
+    "ingredientPattern": "CCC,CCC,C_C",
+    "ingredients": {
+      "C": { "type": "block", "code": "bricklayers:mudbricks-brownlight", "quantity": 2 }
+    },
+    "width": 3,
+    "height": 3,
+    "output": { "type": "block", "code": "interestingme:lowtempfurnacedoor-closed-north", "quantity": 1 }
+  },
+  {
+    "ingredientPattern": "CCC,CCC,C_C",
+    "ingredients": {
+      "C": { "type": "block", "code": "bricklayers:mudbricks-brownweathered", "quantity": 2 }
+    },
+    "width": 3,
+    "height": 3,
+    "output": { "type": "block", "code": "interestingme:lowtempfurnacedoor-closed-north", "quantity": 1 }
+  },
+  {
+    "ingredientPattern": "CCC,CCC,C_C",
+    "ingredients": {
+      "C": { "type": "block", "code": "bricklayers:mudbricks-green", "quantity": 2 }
+    },
+    "width": 3,
+    "height": 3,
+    "output": { "type": "block", "code": "interestingme:lowtempfurnacedoor-closed-north", "quantity": 1 }
+  },
+  {
+    "ingredientPattern": "CCC,CCC,C_C",
+    "ingredients": {
+      "C": { "type": "block", "code": "bricklayers:mudbricks-orange", "quantity": 2 }
+    },
+    "width": 3,
+    "height": 3,
+    "output": { "type": "block", "code": "interestingme:lowtempfurnacedoor-closed-north", "quantity": 1 }
+  },
+  {
+    "ingredientPattern": "CCC,CCC,C_C",
+    "ingredients": {
+      "C": { "type": "block", "code": "bricklayers:mudbricks-pink", "quantity": 2 }
+    },
+    "width": 3,
+    "height": 3,
+    "output": { "type": "block", "code": "interestingme:lowtempfurnacedoor-closed-north", "quantity": 1 }
+  },
+  {
+    "ingredientPattern": "CCC,CCC,C_C",
+    "ingredients": {
+      "C": { "type": "block", "code": "bricklayers:mudbricks-tan", "quantity": 2 }
+    },
+    "width": 3,
+    "height": 3,
+    "output": { "type": "block", "code": "interestingme:lowtempfurnacedoor-closed-north", "quantity": 1 }
+  },
+  {
+    "ingredientPattern": "CCC,CCC,C_C",
+    "ingredients": {
+      "C": { "type": "block", "code": "bricklayers:mudbricks-yellow", "quantity": 2 }
+    },
+    "width": 3,
+    "height": 3,
+    "output": { "type": "block", "code": "interestingme:lowtempfurnacedoor-closed-north", "quantity": 1 }
+  }
+]

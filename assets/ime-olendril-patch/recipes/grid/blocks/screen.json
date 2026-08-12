@@ -1,0 +1,24 @@
+[
+    {
+        "ingredientPattern": "SMS,PPP,PPS",
+        "ingredients": {
+            "S": { "type": "block", "code": "game:supportbeam-*", "quantity": 2 },
+            "P": { "type": "item", "code": "game:plank-*", "quantity": 4 },
+            "M": { "type": "item", "code": "game:rod-blackbronze", "quantity": 7 }
+        },
+        "width": 3,
+        "height": 3,
+        "output": { "type": "block", "code": "interestingme:screen-north", "quantity": 1 }
+    },
+    {
+        "ingredientPattern": "SMS,PPP,PPS",
+        "ingredients": {
+            "S": { "type": "block", "code": "game:supportbeam-*", "quantity": 2 },
+            "P": { "type": "item", "code": "game:plank-*", "quantity": 4 },
+            "M": { "type": "item", "code": "game:rod-bismuthbronze", "quantity": 7 }
+        },
+        "width": 3,
+        "height": 3,
+        "output": { "type": "block", "code": "interestingme:screen-north", "quantity": 1 }
+    }
+]

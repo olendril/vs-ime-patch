@@ -1,0 +1,17 @@
+{
+  "type": "code",
+  "modid": "ime-olendril-patch",
+  "name": "InterestingME Material Needs Furnace Patch",
+  "authors": [
+    "Olendril"
+  ],
+  "description": "Adds Screen bronze compatibility and extends InterestingME furnace structure validation for Material Needs Tier 1 full mudbricks and Bricklayers 3.2.2 full glazed bricks.",
+  "version": "1.2.0",
+  "side": "Universal",
+  "dependencies": {
+    "game": "",
+    "interestingme": "1.0.16",
+    "materialneeds": "2.0.0",
+    "bricklayers": "3.2.2"
+  }
+}
