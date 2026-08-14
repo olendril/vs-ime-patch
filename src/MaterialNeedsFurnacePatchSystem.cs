@@ -48,6 +48,7 @@ public sealed class MaterialNeedsFurnacePatchSystem : ModSystem
 
     public override void Start(ICoreAPI api)
     {
+        api.RegisterCollectibleBehaviorClass(ManualMuckCrusher.BehaviorName, typeof(ManualMuckCrusher));
         harmony = new Harmony(HarmonyId);
         PatchTarget(
             api,
@@ -70,10 +71,12 @@ public sealed class MaterialNeedsFurnacePatchSystem : ModSystem
             new[] { typeof(string) },
             nameof(IsRoastingGlazedBrick),
             "(string)");
+        ManualMuckCrusher.TryInitialize(harmony, api);
     }
 
     public override void Dispose()
     {
+        ManualMuckCrusher.Disable();
         harmony?.UnpatchAll(HarmonyId);
         harmony = null;
         base.Dispose();

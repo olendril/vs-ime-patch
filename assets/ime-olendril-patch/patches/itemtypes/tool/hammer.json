@@ -1,0 +1,10 @@
+[
+  {
+    "file": "game:itemtypes/tool/hammer.json",
+    "op": "add",
+    "path": "/behaviors/-",
+    "value": {
+      "name": "ManualMuckCrusher"
+    }
+  }
+]

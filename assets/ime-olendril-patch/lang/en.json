@@ -1,0 +1,21 @@
+{
+  "ime-manualmuck-help": "Sneak + left-click a single coarse muck layer with this hammer. Strike 5 times.",
+  "ime-message-manualmuck-disabled": "Manual muck crushing is unavailable because the required InterestingME data could not be read.",
+  "ime-message-manualmuck-wrong-hammer": "This hammer cannot crush muck. Use a tin-bronze, bismuth-bronze, black-bronze, iron, meteoric-iron, or steel hammer.",
+  "ime-message-manualmuck-not-coarse": "Only coarse muck can be crushed manually; raw and fine muck cannot.",
+  "ime-message-manualmuck-one-layer": "Manual crushing requires exactly one coarse muck layer.",
+  "ime-message-manualmuck-no-pile": "I could not read that muck pile. Aim at the pile and try again.",
+  "ime-message-manualmuck-progress": "Muck strike {0}/{1}.",
+  "ime-message-manualmuck-success": "The coarse muck became fine muck.",
+  "ime-message-manualmuck-failure": "The coarse muck was destroyed.",
+  "ime-message-manualmuck-runtime-failure": "The muck could not be crushed because its data was invalid. Please try again later.",
+  "ingameerror-ime-message-manualmuck-disabled": "Manual muck crushing is unavailable because the required InterestingME data could not be read.",
+  "ingameerror-ime-message-manualmuck-wrong-hammer": "This hammer cannot crush muck. Use a tin-bronze, bismuth-bronze, black-bronze, iron, meteoric-iron, or steel hammer.",
+  "ingameerror-ime-message-manualmuck-not-coarse": "Only coarse muck can be crushed manually; raw and fine muck cannot.",
+  "ingameerror-ime-message-manualmuck-one-layer": "Manual crushing requires exactly one coarse muck layer.",
+  "ingameerror-ime-message-manualmuck-no-pile": "I could not read that muck pile. Aim at the pile and try again.",
+  "ingameerror-ime-message-manualmuck-progress": "Muck strike {0}/{1}.",
+  "ingameerror-ime-message-manualmuck-success": "The coarse muck became fine muck.",
+  "ingameerror-ime-message-manualmuck-failure": "The coarse muck was destroyed.",
+  "ingameerror-ime-message-manualmuck-runtime-failure": "The muck could not be crushed because its data was invalid. Please try again later."
+}

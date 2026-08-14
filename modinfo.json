@@ -5,8 +5,8 @@
   "authors": [
     "Olendril"
   ],
-  "description": "Adds Screen bronze compatibility and extends InterestingME furnace structure validation for Material Needs Tier 1 full mudbricks and Bricklayers 3.2.2 full glazed bricks.",
-  "version": "1.2.0",
+  "description": "Adds Screen bronze compatibility, extends InterestingME furnace structure validation for Material Needs Tier 1 full mudbricks and Bricklayers 3.2.2 full glazed bricks, and adds slow manual crushing of single-layer coarse muck with selected vanilla hammers.",
+  "version": "1.3.9",
   "side": "Universal",
   "dependencies": {
     "game": "",
