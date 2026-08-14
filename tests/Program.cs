@@ -25,7 +25,7 @@ if (!File.Exists(survivalModPath)) throw new FileNotFoundException("Vintage Stor
 
 AssemblyLoadContext.Default.Resolving += (_, name) =>
 {
-    foreach (var directory in new[] { gamePath, Path.Combine(gamePath, "Lib") })
+    foreach (var directory in new[] { gamePath, Path.Combine(gamePath, "Lib"), Path.Combine(gamePath, "Mods") })
     {
         var candidate = Path.Combine(directory, name.Name + ".dll");
         if (File.Exists(candidate)) return AssemblyLoadContext.Default.LoadFromAssemblyPath(candidate);
@@ -579,6 +579,81 @@ Assert(roastingTargetMethod is not null, "InterestingME roasting target method s
 Assert(roastingTargetMethod!.ReturnType == typeof(bool), "InterestingME roasting target method must return bool.");
 Assert(roastingTargetMethod.IsPrivate && roastingTargetMethod.IsStatic, "InterestingME roasting target must remain private static.");
 
+var powerTooltipType = modAssembly.GetType("InterestingMeMaterialNeedsFurnacePatch.ImePowerTooltip")!;
+var appendPowerStatus = powerTooltipType.GetMethod("AppendPowerStatus", BindingFlags.Static | BindingFlags.NonPublic)!;
+var binaryPowerTransition = powerTooltipType.GetMethod("HasBinaryPowerStateChanged", BindingFlags.Static | BindingFlags.NonPublic)!;
+var poweredMachineType = interestingAssembly.GetType("IME.PoweredMachineBlockEntity")!;
+var expectedPoweredMachineTypes = new HashSet<string>(StringComparer.Ordinal)
+{
+    "IME.BlockEntityJawCrusher",
+    "IME.BlockEntityConveyorFlat",
+    "IME.BlockEntityConveyorSplit",
+    "IME.BlockEntityBucketLiftOutput"
+};
+var directPoweredMachineTypes = interestingAssembly.GetTypes()
+    .Where(type => type.BaseType == poweredMachineType)
+    .Select(type => type.FullName!)
+    .ToHashSet(StringComparer.Ordinal);
+Assert(directPoweredMachineTypes.SetEquals(expectedPoweredMachineTypes), "InterestingME 1.0.16 must expose exactly the four expected direct powered-machine subclasses.");
+
+var applyPowerStateTarget = poweredMachineType.GetMethod(
+    "ApplyPowerState",
+    BindingFlags.Instance | BindingFlags.Public,
+    binder: null,
+    types: new[] { typeof(float), typeof(bool), typeof(Vintagestory.API.MathTools.BlockPos) },
+    modifiers: null);
+Assert(applyPowerStateTarget is not null && applyPowerStateTarget.ReturnType == typeof(void) && applyPowerStateTarget.IsVirtual,
+    "PoweredMachineBlockEntity.ApplyPowerState signature changed.");
+var isPoweredProperty = poweredMachineType.GetProperty("IsPowered", BindingFlags.Instance | BindingFlags.NonPublic)!;
+Assert(isPoweredProperty.PropertyType == typeof(bool) && isPoweredProperty.GetMethod?.IsFamily == true,
+    "PoweredMachineBlockEntity.IsPowered must remain a protected boolean property.");
+
+foreach (var blockTypeName in new[] { "IME.BlockIMEDescribed", "IME.BlockConveyorFlat", "IME.BlockConveyorSplit", "IME.BlockBucketLiftOutput" })
+{
+    var blockType = interestingAssembly.GetType(blockTypeName)!;
+    var tooltipMethod = blockType.GetMethod(
+        "GetPlacedBlockInfo",
+        BindingFlags.Instance | BindingFlags.Public,
+        binder: null,
+        types: new[] { typeof(IWorldAccessor), typeof(Vintagestory.API.MathTools.BlockPos), typeof(IPlayer) },
+        modifiers: null);
+    Assert(
+        tooltipMethod is not null && tooltipMethod.DeclaringType == blockType && tooltipMethod.ReturnType == typeof(string) && tooltipMethod.IsVirtual,
+        $"{blockTypeName}.GetPlacedBlockInfo signature changed.");
+}
+
+var blockEntityToTree = typeof(BlockEntity).GetMethod(
+    "ToTreeAttributes",
+    BindingFlags.Instance | BindingFlags.Public,
+    binder: null,
+    types: new[] { typeof(Vintagestory.API.Datastructures.ITreeAttribute) },
+    modifiers: null);
+var blockEntityFromTree = typeof(BlockEntity).GetMethod(
+    "FromTreeAttributes",
+    BindingFlags.Instance | BindingFlags.Public,
+    binder: null,
+    types: new[] { typeof(Vintagestory.API.Datastructures.ITreeAttribute), typeof(IWorldAccessor) },
+    modifiers: null);
+Assert(blockEntityToTree is not null && blockEntityToTree.ReturnType == typeof(void) && blockEntityToTree.IsVirtual,
+    "Vintage Story BlockEntity.ToTreeAttributes signature changed.");
+Assert(blockEntityFromTree is not null && blockEntityFromTree.ReturnType == typeof(void) && blockEntityFromTree.IsVirtual,
+    "Vintage Story BlockEntity.FromTreeAttributes signature changed.");
+
+using (var language = JsonDocument.Parse(File.ReadAllText(Path.Combine(repositoryRoot, "assets", "ime-olendril-patch", "lang", "en.json"))))
+{
+    Assert(language.RootElement.GetProperty("ime-powered").GetString() == "IME power: Powered", "The powered localization must be exact English text.");
+    Assert(language.RootElement.GetProperty("ime-unpowered").GetString() == "IME power: Unpowered", "The unpowered localization must be exact English text.");
+}
+Assert(!(bool)binaryPowerTransition.Invoke(null, new object?[] { false, false })!, "Repeated unpowered calculations must not request synchronization.");
+Assert(!(bool)binaryPowerTransition.Invoke(null, new object?[] { true, true })!, "Repeated powered calculations must not request synchronization.");
+Assert((bool)binaryPowerTransition.Invoke(null, new object?[] { false, true })!, "A powered transition must request synchronization.");
+Assert((bool)binaryPowerTransition.Invoke(null, new object?[] { true, false })!, "An unpowered transition must request synchronization.");
+var composedPoweredTooltip = (string)appendPowerStatus.Invoke(null, new object?[] { "Existing description\nFacing: north", true })!;
+Assert(composedPoweredTooltip.StartsWith("Existing description\nFacing: north\n", StringComparison.Ordinal), "Powered tooltip composition must preserve existing description and facing text.");
+Assert(composedPoweredTooltip.EndsWith("IME power: Powered", StringComparison.Ordinal) && !composedPoweredTooltip.Contains("ime-powered", StringComparison.Ordinal), "Powered tooltip composition must render the localized text instead of its slug.");
+Assert(composedPoweredTooltip.Split('\n').Length == 3, "Powered tooltip composition must append exactly one line.");
+Assert((string)appendPowerStatus.Invoke(null, new object?[] { composedPoweredTooltip, true })! == composedPoweredTooltip, "Repeated tooltip composition must not duplicate the power line.");
+
 var system = (ModSystem)Activator.CreateInstance(systemType)!;
 var api = DispatchProxy.Create<ICoreAPI, NullCoreApiProxy>();
 system.Start(api);
@@ -591,6 +666,65 @@ Assert(
 Assert(
     !apiProxy.LogMessages.Any(message => message.Contains("Manual muck crushing disabled", StringComparison.Ordinal)),
     "The real Harmony lifecycle must not log that manual crushing was disabled.");
+var harmonyType = AssemblyLoadContext.Default.Assemblies.Select(assembly => assembly.GetType("HarmonyLib.Harmony")).FirstOrDefault(type => type is not null)!;
+var getPatchInfo = harmonyType.GetMethod("GetPatchInfo", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)!;
+bool IsOwnedPatch(MethodBase method)
+{
+    var patchInfo = getPatchInfo.Invoke(null, new object?[] { method });
+    var owners = patchInfo?.GetType().GetProperty("Owners")?.GetValue(patchInfo) as IEnumerable;
+    return owners?.Cast<object>().Any(owner => string.Equals(owner.ToString(), "ime-olendril-patch", StringComparison.Ordinal)) == true;
+}
+Assert(
+    new[] { "IME.BlockIMEDescribed", "IME.BlockConveyorFlat", "IME.BlockConveyorSplit", "IME.BlockBucketLiftOutput" }
+        .Select(typeName => interestingAssembly.GetType(typeName)!.GetMethod(
+            "GetPlacedBlockInfo",
+            BindingFlags.Instance | BindingFlags.Public,
+            binder: null,
+            types: new[] { typeof(IWorldAccessor), typeof(Vintagestory.API.MathTools.BlockPos), typeof(IPlayer) },
+            modifiers: null)!)
+        .All(IsOwnedPatch),
+    "All four exact IME tooltip methods must be Harmony-patched after startup.");
+
+var poweredMachineGate = powerTooltipType.GetMethod("IsPoweredMachine", BindingFlags.Static | BindingFlags.NonPublic)!;
+foreach (var typeName in expectedPoweredMachineTypes)
+{
+    var instance = Activator.CreateInstance(interestingAssembly.GetType(typeName)!)!;
+    Assert((bool)poweredMachineGate.Invoke(null, new[] { instance })!, $"{typeName} must be eligible for the powered tooltip.");
+}
+foreach (var typeName in new[]
+{
+    "IME.BlockEntitySieve", "IME.BlockEntityMuckScreen", "IME.BlockEntityIMEPowerInput",
+    "IME.BlockEntityIMEPowerConnector", "IME.BlockEntityLowTempFurnaceDoor",
+    "IME.BlockEntityRoastingFurnaceDoor", "IME.BlockEntityHighTempFurnaceDoor"
+})
+{
+    var instance = Activator.CreateInstance(interestingAssembly.GetType(typeName)!)!;
+    Assert(!(bool)poweredMachineGate.Invoke(null, new[] { instance })!, $"{typeName} must be excluded from the powered tooltip.");
+}
+var serializedPoweredMachine = Activator.CreateInstance(interestingAssembly.GetType("IME.BlockEntityJawCrusher")!)!;
+var serializedUnpoweredMachine = Activator.CreateInstance(interestingAssembly.GetType("IME.BlockEntityJawCrusher")!)!;
+var powerPosition = new Vintagestory.API.MathTools.BlockPos(0, 0, 0);
+applyPowerStateTarget!.Invoke(serializedPoweredMachine, new object?[] { 1f, true, powerPosition });
+applyPowerStateTarget.Invoke(serializedUnpoweredMachine, new object?[] { 0f, false, powerPosition });
+var toTreePostfix = powerTooltipType.GetMethod("ToTreeAttributesPostfix", BindingFlags.Static | BindingFlags.NonPublic)!;
+var fromTreePostfix = powerTooltipType.GetMethod("FromTreeAttributesPostfix", BindingFlags.Static | BindingFlags.NonPublic)!;
+var poweredTree = new Vintagestory.API.Datastructures.TreeAttribute();
+var unpoweredTree = new Vintagestory.API.Datastructures.TreeAttribute();
+toTreePostfix.Invoke(null, new object?[] { serializedPoweredMachine, poweredTree });
+toTreePostfix.Invoke(null, new object?[] { serializedUnpoweredMachine, unpoweredTree });
+var powerTreeKey = (string)powerTooltipType.GetField("PowerTreeKey", BindingFlags.Static | BindingFlags.NonPublic)!.GetRawConstantValue()!;
+Assert(poweredTree.GetBool(powerTreeKey, false), "Powered state must serialize true under the namespaced attribute.");
+Assert(!unpoweredTree.GetBool(powerTreeKey, true), "Unpowered state must serialize false under the namespaced attribute.");
+var receivedPoweredMachine = Activator.CreateInstance(interestingAssembly.GetType("IME.BlockEntityJawCrusher")!)!;
+var receivedUnpoweredMachine = Activator.CreateInstance(interestingAssembly.GetType("IME.BlockEntityJawCrusher")!)!;
+fromTreePostfix.Invoke(null, new object?[] { receivedPoweredMachine, poweredTree });
+fromTreePostfix.Invoke(null, new object?[] { receivedUnpoweredMachine, unpoweredTree });
+var cachedPowerState = powerTooltipType.GetMethod("TryGetCachedPowerState", BindingFlags.Static | BindingFlags.NonPublic)!;
+var receivedPoweredArguments = new object?[] { receivedPoweredMachine, false };
+var receivedUnpoweredArguments = new object?[] { receivedUnpoweredMachine, true };
+Assert((bool)cachedPowerState.Invoke(null, receivedPoweredArguments)! && (bool)receivedPoweredArguments[1]!, "True serialized power state must cache on receipt.");
+Assert((bool)cachedPowerState.Invoke(null, receivedUnpoweredArguments)! && !(bool)receivedUnpoweredArguments[1]!, "False serialized power state must cache on receipt.");
+Assert(!(bool)isPoweredProperty.GetValue(receivedPoweredMachine)!, "Receiving the tooltip state must not modify IME operational fields.");
 Assert(
     (bool)targetMethod.Invoke(null, new object?[] { 1, "redmudbrick-light" })!,
     "The registered Harmony postfix should make a Material Needs Tier 1 block valid.");
@@ -617,6 +751,16 @@ Assert(
     "The registered Harmony postfix must not make Material Needs blocks valid in Tier 2.");
 system.Dispose();
 Assert(
+    new[] { "IME.BlockIMEDescribed", "IME.BlockConveyorFlat", "IME.BlockConveyorSplit", "IME.BlockBucketLiftOutput" }
+        .Select(typeName => interestingAssembly.GetType(typeName)!.GetMethod(
+            "GetPlacedBlockInfo",
+            BindingFlags.Instance | BindingFlags.Public,
+            binder: null,
+            types: new[] { typeof(IWorldAccessor), typeof(Vintagestory.API.MathTools.BlockPos), typeof(IPlayer) },
+            modifiers: null)!)
+        .All(method => !IsOwnedPatch(method)),
+    "Disposing the mod system must remove all four IME tooltip patches.");
+Assert(
     !(bool)targetMethod.Invoke(null, new object?[] { 1, "redmudbrick-light" })!,
     "Disposing the mod system must remove its Harmony patch.");
 Assert(
@@ -628,8 +772,8 @@ using (var manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(repositor
     var root = manifest.RootElement;
     Assert(root.GetProperty("modid").GetString() == "ime-olendril-patch", "The mod ID must be ime-olendril-patch.");
     Assert(root.GetProperty("side").GetString() == "Universal", "The mod must declare Universal loading.");
-    Assert(root.GetProperty("version").GetString() == "1.3.11", "The mod version must be 1.3.11.");
-    Assert(root.GetProperty("description").GetString()!.Contains("manual crushing"), "The manifest must mention manual crushing.");
+    Assert(root.GetProperty("version").GetString() == "1.4.0", "The mod version must be 1.4.0.");
+    Assert(root.GetProperty("description").GetString()!.Contains("manual crushing") && root.GetProperty("description").GetString()!.Contains("powered-machine status tooltips"), "The manifest must mention manual crushing and powered-machine status tooltips.");
     var dependencies = root.GetProperty("dependencies");
     Assert(dependencies.GetProperty("interestingme").GetString() == "1.0.16", "InterestingME dependency must be exact.");
     Assert(dependencies.GetProperty("materialneeds").GetString() == "2.0.0", "Material Needs dependency must be exact.");

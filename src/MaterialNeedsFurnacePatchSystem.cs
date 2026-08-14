@@ -72,10 +72,12 @@ public sealed class MaterialNeedsFurnacePatchSystem : ModSystem
             nameof(IsRoastingGlazedBrick),
             "(string)");
         ManualMuckCrusher.TryInitialize(harmony, api);
+        ImePowerTooltip.TryInitialize(harmony, api);
     }
 
     public override void Dispose()
     {
+        ImePowerTooltip.Disable(harmony);
         ManualMuckCrusher.Disable();
         harmony?.UnpatchAll(HarmonyId);
         harmony = null;
