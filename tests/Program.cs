@@ -346,6 +346,29 @@ using (var language = JsonDocument.Parse(File.ReadAllText(languagePath)))
         "ingameerror-ime-message-manualmuck-runtime-failure"
     })
         Assert(language.RootElement.TryGetProperty(key, out _), $"Manual crushing HUD localization key {key} is missing.");
+
+    var muckPileNameTranslations = language.RootElement.EnumerateObject()
+        .Where(property => property.Name.StartsWith("interestingme:block-muckpile-", StringComparison.Ordinal))
+        .ToArray();
+    Assert(muckPileNameTranslations.Length == 114, "Muck-pile localization must cover the three stone variants and all 37 built-in ore variants.");
+    Assert(
+        muckPileNameTranslations.All(property => property.Name.EndsWith("-*", StringComparison.Ordinal)),
+        "Muck-pile localization must use trailing wildcard keys for generated block variants.");
+    Assert(
+        muckPileNameTranslations.All(property => property.Value.GetString()!.EndsWith(" Muck Pile", StringComparison.Ordinal)),
+        "Muck-pile wildcard translations must provide readable names rather than block slugs.");
+
+    var expectedMuckPileNames = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        ["interestingme:block-muckpile-raw-stone-*"] = "Raw Stone Muck Pile",
+        ["interestingme:block-muckpile-coarse-ore-limonite-*"] = "Coarse Iron Muck Pile",
+        ["interestingme:block-muckpile-raw-ore-hematite-*"] = "Raw Iron Muck Pile",
+        ["interestingme:block-muckpile-fine-ore-nativecopper-*"] = "Fine Copper Muck Pile"
+    };
+    foreach (var expected in expectedMuckPileNames)
+        Assert(
+            language.RootElement.GetProperty(expected.Key).GetString() == expected.Value,
+            $"Muck-pile localization {expected.Key} must be {expected.Value}.");
 }
 
 var muckPileType = interestingAssembly.GetType("IME.BlockEntityMuckPile")!;
@@ -605,7 +628,7 @@ using (var manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(repositor
     var root = manifest.RootElement;
     Assert(root.GetProperty("modid").GetString() == "ime-olendril-patch", "The mod ID must be ime-olendril-patch.");
     Assert(root.GetProperty("side").GetString() == "Universal", "The mod must declare Universal loading.");
-    Assert(root.GetProperty("version").GetString() == "1.3.9", "The mod version must be 1.3.9.");
+    Assert(root.GetProperty("version").GetString() == "1.3.11", "The mod version must be 1.3.11.");
     Assert(root.GetProperty("description").GetString()!.Contains("manual crushing"), "The manifest must mention manual crushing.");
     var dependencies = root.GetProperty("dependencies");
     Assert(dependencies.GetProperty("interestingme").GetString() == "1.0.16", "InterestingME dependency must be exact.");
