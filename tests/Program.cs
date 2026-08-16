@@ -922,7 +922,7 @@ using (var manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(repositor
         root.GetProperty("description").GetString()!.Contains("powered-machine status tooltips"),
         "The manifest must mention explosive drilling, manual crushing, and powered-machine status tooltips.");
     var dependencies = root.GetProperty("dependencies");
-    Assert(dependencies.GetProperty("interestingme").GetString() == "1.0.16", "InterestingME dependency must be exact.");
+    Assert(dependencies.GetProperty("interestingme").GetString() == "", "InterestingME dependency must require only that the mod is present.");
     Assert(dependencies.GetProperty("materialneeds").GetString() == "2.0.0", "Material Needs dependency must be exact.");
     Assert(dependencies.GetProperty("bricklayers").GetString() == "3.2.2", "Bricklayers dependency must be exact.");
 }

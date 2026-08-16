@@ -10,7 +10,7 @@
   "side": "Universal",
   "dependencies": {
     "game": "",
-    "interestingme": "1.0.16",
+    "interestingme": "",
     "materialneeds": "2.0.0",
     "bricklayers": "3.2.2"
   }
