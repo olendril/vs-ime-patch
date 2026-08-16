@@ -6,15 +6,17 @@ namespace InterestingMeMaterialNeedsFurnacePatch;
 
 /// <summary>
 /// Extends InterestingME's furnace validation for the exact compatible full
-/// blocks supplied by Material Needs and Bricklayers.
+/// blocks supplied by Material Needs and Bricklayers and its furnace grates.
 /// </summary>
 public sealed class MaterialNeedsFurnacePatchSystem : ModSystem
 {
     private const string HarmonyId = "ime-olendril-patch";
     private const string LowTempTargetTypeName = "IME.BlockEntityLowTempFurnaceDoor";
     private const string LowTempTargetMethodName = "IsValidTierBrick";
+    private const string LowTempGrateTargetMethodName = "IsValidGrateBlock";
     private const string RoastingTargetTypeName = "IME.BlockEntityRoastingFurnaceDoor";
     private const string RoastingTargetMethodName = "IsValidBrick";
+    private const string RoastingGrateTargetMethodName = "IsValidGrateBlock";
 
     private Harmony? harmony;
 
@@ -46,6 +48,14 @@ public sealed class MaterialNeedsFurnacePatchSystem : ModSystem
         "glazedbricks-milky-redbrown", "glazedbricks-milky-white", "glazedbricks-milky-yellow"
     };
 
+    private static readonly HashSet<string> RefractoryBrickGratingPaths = new(StringComparer.Ordinal)
+    {
+        "refractorybrickgrating-good-fire",
+        "refractorybrickgrating-good-tier1",
+        "refractorybrickgrating-good-tier2",
+        "refractorybrickgrating-good-tier3"
+    };
+
     public override void Start(ICoreAPI api)
     {
         api.RegisterCollectibleBehaviorClass(ManualMuckCrusher.BehaviorName, typeof(ManualMuckCrusher));
@@ -66,10 +76,24 @@ public sealed class MaterialNeedsFurnacePatchSystem : ModSystem
             "(int, string)");
         PatchTarget(
             api,
+            LowTempTargetTypeName,
+            LowTempGrateTargetMethodName,
+            new[] { typeof(string) },
+            nameof(IsRefractoryBrickGrating),
+            "(string)");
+        PatchTarget(
+            api,
             RoastingTargetTypeName,
             RoastingTargetMethodName,
             new[] { typeof(string) },
             nameof(IsRoastingGlazedBrick),
+            "(string)");
+        PatchTarget(
+            api,
+            RoastingTargetTypeName,
+            RoastingGrateTargetMethodName,
+            new[] { typeof(string) },
+            nameof(IsRefractoryBrickGrating),
             "(string)");
         ManualMuckCrusher.TryInitialize(harmony, api);
         ImePowerTooltip.TryInitialize(harmony, api);
@@ -148,5 +172,13 @@ public sealed class MaterialNeedsFurnacePatchSystem : ModSystem
     {
         if (__result || string.IsNullOrEmpty(path)) return;
         __result = BricklayersGlazedBrickPaths.Contains(path);
+    }
+
+    private static void IsRefractoryBrickGrating(string path, ref bool __result)
+    {
+        // Keep IME's accepted results untouched and explicitly retain the four
+        // full vanilla grating variants used by its furnace projections.
+        if (__result || string.IsNullOrEmpty(path)) return;
+        __result = RefractoryBrickGratingPaths.Contains(path);
     }
 }

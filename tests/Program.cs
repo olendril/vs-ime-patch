@@ -40,7 +40,9 @@ var survivalAssembly = AssemblyLoadContext.Default.LoadFromAssemblyPath(survival
 var systemType = modAssembly.GetType("InterestingMeMaterialNeedsFurnacePatch.MaterialNeedsFurnacePatchSystem")!;
 var lowTempPostfix = systemType.GetMethod("IsMaterialNeedsTierOneMudbrick", BindingFlags.Static | BindingFlags.NonPublic)!;
 var glazedLowTempPostfix = systemType.GetMethod("IsBricklayersTierTwoGlazedBrick", BindingFlags.Static | BindingFlags.NonPublic)!;
+var lowTempGratePostfix = systemType.GetMethod("IsRefractoryBrickGrating", BindingFlags.Static | BindingFlags.NonPublic)!;
 var roastingPostfix = systemType.GetMethod("IsRoastingGlazedBrick", BindingFlags.Static | BindingFlags.NonPublic)!;
+var roastingGratePostfix = systemType.GetMethod("IsRefractoryBrickGrating", BindingFlags.Static | BindingFlags.NonPublic)!;
 var manualCrusherType = modAssembly.GetType("InterestingMeMaterialNeedsFurnacePatch.ManualMuckCrusher")!;
 var manualAttackStart = manualCrusherType.GetMethod("OnHeldAttackStart", BindingFlags.Instance | BindingFlags.Public)!;
 Assert(manualAttackStart.ReturnType == typeof(void), "Manual muck crushing must use the collectible attack-start callback.");
@@ -102,6 +104,13 @@ bool ApplyRoastingPostfix(string? path, bool originalResult = false)
     return (bool)arguments[1]!;
 }
 
+bool ApplyGratePostfix(MethodInfo postfix, string? path, bool originalResult = false)
+{
+    var arguments = new object?[] { path, originalResult };
+    postfix.Invoke(null, arguments);
+    return (bool)arguments[1]!;
+}
+
 void Assert(bool condition, string message)
 {
     if (!condition) throw new InvalidOperationException(message);
@@ -139,6 +148,13 @@ var glazedBrickColors = new[]
 var glazedBrickPaths = new[] { "clear", "milky" }
     .SelectMany(glaze => glazedBrickColors.Select(color => $"glazedbricks-{glaze}-{color}"))
     .ToArray();
+var gratingPaths = new[]
+{
+    "refractorybrickgrating-good-fire",
+    "refractorybrickgrating-good-tier1",
+    "refractorybrickgrating-good-tier2",
+    "refractorybrickgrating-good-tier3"
+};
 var bricklayersPaths = new[]
 {
     "mudbricks-ash", "mudbricks-blue", "mudbricks-brown", "mudbricks-browngolden",
@@ -511,6 +527,14 @@ foreach (var path in glazedBrickPaths)
     Assert(ApplyRoastingPostfix(path, originalResult: true), $"Roasting acceptance must preserve an existing true result for {path}.");
 }
 
+foreach (var path in gratingPaths)
+{
+    Assert(ApplyGratePostfix(lowTempGratePostfix, path), $"The low-temperature furnace grate validator should accept {path}.");
+    Assert(ApplyGratePostfix(roastingGratePostfix, path), $"The roasting-furnace grate validator should accept {path}.");
+    Assert(ApplyGratePostfix(lowTempGratePostfix, path, originalResult: true), $"Low-temperature grate acceptance must preserve an existing true result for {path}.");
+    Assert(ApplyGratePostfix(roastingGratePostfix, path, originalResult: true), $"Roasting-furnace grate acceptance must preserve an existing true result for {path}.");
+}
+
 foreach (var path in vanillaPaths.Concat(bricklayersPaths))
     Assert(ApplyPostfix(1, path, originalResult: true), $"An InterestingME-accepted full block {path} must remain accepted.");
 
@@ -533,6 +557,19 @@ foreach (var excludedPath in new[]
     Assert(!ApplyPostfix(2, excludedPath), $"Smelting Furnace must reject excluded glazed path {excludedPath}.");
     Assert(!ApplyRoastingPostfix(excludedPath), $"Roasting Furnace must reject excluded glazed path {excludedPath}.");
 }
+foreach (var excludedGratingPath in new[]
+{
+    "refractorybrickgrating-good-tier4",
+    "refractorybrickgrating-good-tier2-slab",
+    "game:refractorybrickgrating-good-tier2",
+    "refractorybrickgrating-good-*"
+})
+{
+    Assert(!ApplyGratePostfix(lowTempGratePostfix, excludedGratingPath), $"The low-temperature grate patch must reject unsupported path {excludedGratingPath} when IME rejects it.");
+        Assert(!ApplyGratePostfix(roastingGratePostfix, excludedGratingPath), $"The roasting-furnace grate patch must reject unsupported path {excludedGratingPath} when IME rejects it.");
+}
+Assert(ApplyGratePostfix(lowTempGratePostfix, "refractorybrickgrating-damaged-tier2", originalResult: true), "The low-temperature grate patch must preserve an existing IME acceptance.");
+Assert(ApplyGratePostfix(roastingGratePostfix, "refractorybrickgrating-damaged-tier2", originalResult: true), "The roasting-furnace grate patch must preserve an existing IME acceptance.");
 Assert(!ApplyRoastingPostfix(null), "A null roasting-furnace path must remain invalid.");
 Assert(ApplyRoastingPostfix("mudbrick", originalResult: true), "Roasting acceptance must preserve InterestingME results.");
 
@@ -578,6 +615,48 @@ var roastingTargetMethod = roastingType.GetMethod(
 Assert(roastingTargetMethod is not null, "InterestingME roasting target method signature changed.");
 Assert(roastingTargetMethod!.ReturnType == typeof(bool), "InterestingME roasting target method must return bool.");
 Assert(roastingTargetMethod.IsPrivate && roastingTargetMethod.IsStatic, "InterestingME roasting target must remain private static.");
+
+var lowTempGrateTargetMethod = targetType.GetMethod(
+    "IsValidGrateBlock",
+    BindingFlags.Static | BindingFlags.NonPublic,
+    binder: null,
+    types: new[] { typeof(string) },
+    modifiers: null);
+Assert(lowTempGrateTargetMethod is not null, "InterestingME low-temperature grate validator signature changed.");
+Assert(lowTempGrateTargetMethod!.ReturnType == typeof(bool), "InterestingME low-temperature grate validator must return bool.");
+Assert(lowTempGrateTargetMethod.IsPrivate && lowTempGrateTargetMethod.IsStatic, "InterestingME low-temperature grate validator must remain private static.");
+
+var roastingGrateTargetMethod = roastingType.GetMethod(
+    "IsValidGrateBlock",
+    BindingFlags.Static | BindingFlags.NonPublic,
+    binder: null,
+    types: new[] { typeof(string) },
+    modifiers: null);
+Assert(roastingGrateTargetMethod is not null, "InterestingME roasting grate validator signature changed.");
+Assert(roastingGrateTargetMethod!.ReturnType == typeof(bool), "InterestingME roasting grate validator must return bool.");
+Assert(roastingGrateTargetMethod.IsPrivate && roastingGrateTargetMethod.IsStatic, "InterestingME roasting grate validator must remain private static.");
+
+var highTempType = interestingAssembly.GetType("IME.BlockEntityHighTempFurnaceDoor")!;
+var highTempGrateTargetMethod = highTempType.GetMethod(
+    "IsValidGrateBlock",
+    BindingFlags.Static | BindingFlags.NonPublic,
+    binder: null,
+    types: new[] { typeof(string) },
+    modifiers: null);
+Assert(highTempGrateTargetMethod is null, "InterestingME high-temperature furnace must not be treated as having a grate validator.");
+var highTempBrickTargetMethod = highTempType.GetMethod(
+    "IsValidBrick",
+    BindingFlags.Static | BindingFlags.NonPublic,
+    binder: null,
+    types: new[] { typeof(string) },
+    modifiers: null);
+Assert(highTempBrickTargetMethod is not null && highTempBrickTargetMethod.ReturnType == typeof(bool) && highTempBrickTargetMethod.IsPrivate && highTempBrickTargetMethod.IsStatic,
+    "InterestingME high-temperature brick validator signature changed.");
+foreach (var path in gratingPaths)
+{
+    Assert((bool)lowTempGrateTargetMethod.Invoke(null, new object?[] { path })!, $"IME low-temperature grate validator should accept {path}.");
+    Assert((bool)roastingGrateTargetMethod.Invoke(null, new object?[] { path })!, $"IME roasting grate validator should accept {path}.");
+}
 
 var powerTooltipType = modAssembly.GetType("InterestingMeMaterialNeedsFurnacePatch.ImePowerTooltip")!;
 var appendPowerStatus = powerTooltipType.GetMethod("AppendPowerStatus", BindingFlags.Static | BindingFlags.NonPublic)!;
@@ -684,6 +763,10 @@ Assert(
             modifiers: null)!)
         .All(IsOwnedPatch),
     "All four exact IME tooltip methods must be Harmony-patched after startup.");
+Assert(
+    new[] { lowTempGrateTargetMethod!, roastingGrateTargetMethod! }.All(IsOwnedPatch),
+    "The low-temperature and roasting-furnace grate validators must be Harmony-patched after startup.");
+Assert(!IsOwnedPatch(highTempBrickTargetMethod!), "The high-temperature furnace brick validator must remain untouched.");
 
 var poweredMachineGate = powerTooltipType.GetMethod("IsPoweredMachine", BindingFlags.Static | BindingFlags.NonPublic)!;
 foreach (var typeName in expectedPoweredMachineTypes)
@@ -746,6 +829,15 @@ foreach (var path in glazedBrickPaths)
         (bool)roastingTargetMethod.Invoke(null, new object?[] { path })!,
         $"The registered Roasting Furnace patch should accept glazed brick {path}.");
 }
+foreach (var path in gratingPaths)
+{
+    Assert(
+        (bool)lowTempGrateTargetMethod!.Invoke(null, new object?[] { path })!,
+        $"The registered low-temperature grate patch should accept {path}.");
+    Assert(
+        (bool)roastingGrateTargetMethod!.Invoke(null, new object?[] { path })!,
+        $"The registered Roasting Furnace grate patch should accept {path}.");
+}
 Assert(
     !(bool)targetMethod.Invoke(null, new object?[] { 2, "redmudbrick-light" })!,
     "The registered Harmony postfix must not make Material Needs blocks valid in Tier 2.");
@@ -766,13 +858,19 @@ Assert(
 Assert(
     !(bool)roastingTargetMethod.Invoke(null, new object?[] { glazedBrickPaths[0] })!,
     "Disposing the mod system must remove its roasting-furnace Harmony patch.");
+Assert(
+    !IsOwnedPatch(lowTempGrateTargetMethod!),
+    "Disposing the mod system must remove its low-temperature grate Harmony patch.");
+Assert(
+    !IsOwnedPatch(roastingGrateTargetMethod!),
+    "Disposing the mod system must remove its roasting-furnace grate Harmony patch.");
 
 using (var manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(repositoryRoot, "modinfo.json"))))
 {
     var root = manifest.RootElement;
     Assert(root.GetProperty("modid").GetString() == "ime-olendril-patch", "The mod ID must be ime-olendril-patch.");
     Assert(root.GetProperty("side").GetString() == "Universal", "The mod must declare Universal loading.");
-    Assert(root.GetProperty("version").GetString() == "1.4.0", "The mod version must be 1.4.0.");
+    Assert(root.GetProperty("version").GetString() == "1.5.0", "The mod version must be 1.5.0.");
     Assert(root.GetProperty("description").GetString()!.Contains("manual crushing") && root.GetProperty("description").GetString()!.Contains("powered-machine status tooltips"), "The manifest must mention manual crushing and powered-machine status tooltips.");
     var dependencies = root.GetProperty("dependencies");
     Assert(dependencies.GetProperty("interestingme").GetString() == "1.0.16", "InterestingME dependency must be exact.");
@@ -780,7 +878,7 @@ using (var manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(repositor
     Assert(dependencies.GetProperty("bricklayers").GetString() == "3.2.2", "Bricklayers dependency must be exact.");
 }
 
-Console.WriteLine($"PASS: {recipeCodes.Length} explicit door recipes, {materialNeedsPaths.Length} Material Needs variants, Bricklayers compatibility, manual muck hammer gates/progression/serialization/metadata, tier gates, exclusions, signatures, and universal manifest checks.");
+Console.WriteLine($"PASS: {recipeCodes.Length} explicit door recipes, {materialNeedsPaths.Length} Material Needs variants, {gratingPaths.Length} furnace grating variants, Bricklayers compatibility, manual muck hammer gates/progression/serialization/metadata, tier gates, exclusions, signatures, and universal manifest checks.");
 
 class NullCoreApiProxy : DispatchProxy
 {
