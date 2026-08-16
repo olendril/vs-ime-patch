@@ -1,0 +1,8 @@
+[
+  {
+    "file": "interestingme:config/muck-drops/mngeology-stone.json",
+    "op": "replace",
+    "path": "/requiresMod",
+    "value": "mngeology"
+  }
+]

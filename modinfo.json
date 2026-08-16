@@ -5,8 +5,8 @@
   "authors": [
     "Olendril"
   ],
-  "description": "Adds Screen bronze compatibility, preserves all four InterestingME furnace grating variants, extends furnace structure validation for Material Needs Tier 1 full mudbricks and Bricklayers 3.2.2 full glazed bricks, adds slow manual crushing of single-layer coarse muck with selected vanilla hammers, and shows powered-machine status tooltips for InterestingME machines.",
-  "version": "1.5.0",
+  "description": "Adds Screen bronze compatibility, preserves all four InterestingME furnace grating variants, extends furnace structure validation for Material Needs Tier 1 full mudbricks and Bricklayers 3.2.2 full glazed bricks, fixes explosive drilling for Material Needs Geology rocks, adds slow manual crushing of single-layer coarse muck with selected vanilla hammers, and shows powered-machine status tooltips for InterestingME machines.",
+  "version": "1.6.0",
   "side": "Universal",
   "dependencies": {
     "game": "",

@@ -177,6 +177,12 @@ var recipeCodes = new[]
     "bricklayers:mudbricks-yellow"
 };
 
+var materialNeedsGeologyRockVariants = new[]
+{
+    "arenite", "arkose", "komatiite", "marl", "monzonite",
+    "pyroxenite", "serpentinite", "syenite", "tufa", "wacke"
+};
+
 var recipePath = Path.Combine(
     repositoryRoot,
     "assets",
@@ -209,6 +215,45 @@ Assert(File.Exists(upstreamScreenRecipePath), "The InterestingME 1.0.16 Screen r
 var bricklayersRecipePath = Path.Combine(
     repositoryRoot, "references", "bricklayers-3.2.2", "assets", "bricklayers", "recipes", "grid", "bricks", "glazedclaybricks.json");
 Assert(File.Exists(bricklayersRecipePath), "The Bricklayers 3.2.2 glazed-brick fixture is missing.");
+var materialNeedsGeologyDropPath = Path.Combine(
+    repositoryRoot,
+    "references",
+    "interestingme-v1.0.16",
+    "assets",
+    "interestingme",
+    "config",
+    "muck-drops",
+    "mngeology-stone.json");
+Assert(File.Exists(materialNeedsGeologyDropPath), "The InterestingME Material Needs Geology muck-drop fixture is missing.");
+var materialNeedsGeologyPatchPath = Path.Combine(
+    repositoryRoot,
+    "assets",
+    "ime-olendril-patch",
+    "patches",
+    "config",
+    "muck-drops",
+    "mngeology-stone.json");
+Assert(File.Exists(materialNeedsGeologyPatchPath), "The Material Needs Geology explosive-drilling compatibility patch is missing.");
+using (var materialNeedsGeologyFixture = JsonDocument.Parse(File.ReadAllText(materialNeedsGeologyDropPath)))
+using (var materialNeedsGeologyPatch = JsonDocument.Parse(File.ReadAllText(materialNeedsGeologyPatchPath)))
+{
+    var fixture = materialNeedsGeologyFixture.RootElement;
+    Assert(fixture.GetProperty("requiresMod").GetString() == "advancedgeology", "The upstream fixture must retain the incompatible advancedgeology gate so the patch is meaningful.");
+    var fixtureVariants = fixture.GetProperty("entries")
+        .EnumerateArray()
+        .Select(entry => entry.GetProperty("blockCode").GetString()!.Replace("game:rock-", "", StringComparison.Ordinal))
+        .ToArray();
+    Assert(fixtureVariants.SequenceEqual(materialNeedsGeologyRockVariants), "The Material Needs Geology fixture must contain exactly its ten rock variants.");
+    Assert(fixture.GetProperty("entries").EnumerateArray().All(entry => entry.GetProperty("stoneCode").GetString() == entry.GetProperty("blockCode").GetString()), "Every Material Needs Geology rock entry must preserve its exact host-rock code.");
+
+    var operations = materialNeedsGeologyPatch.RootElement.EnumerateArray().ToArray();
+    Assert(operations.Length == 1, "The Material Needs Geology compatibility patch must contain one exact operation.");
+    var operation = operations[0];
+    Assert(operation.GetProperty("file").GetString() == "interestingme:config/muck-drops/mngeology-stone.json", "The compatibility patch must target InterestingME's Material Needs Geology table.");
+    Assert(operation.GetProperty("op").GetString() == "replace", "The compatibility patch must replace only the broken mod gate.");
+    Assert(operation.GetProperty("path").GetString() == "/requiresMod", "The compatibility patch must modify only the top-level mod gate.");
+    Assert(operation.GetProperty("value").GetString() == "mngeology", "Material Needs Geology entries must be gated by the mngeology mod ID.");
+}
 using (var bricklayers = JsonDocument.Parse(File.ReadAllText(bricklayersRecipePath)))
 {
     var definitions = bricklayers.RootElement.EnumerateArray().ToArray();
@@ -870,15 +915,19 @@ using (var manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(repositor
     var root = manifest.RootElement;
     Assert(root.GetProperty("modid").GetString() == "ime-olendril-patch", "The mod ID must be ime-olendril-patch.");
     Assert(root.GetProperty("side").GetString() == "Universal", "The mod must declare Universal loading.");
-    Assert(root.GetProperty("version").GetString() == "1.5.0", "The mod version must be 1.5.0.");
-    Assert(root.GetProperty("description").GetString()!.Contains("manual crushing") && root.GetProperty("description").GetString()!.Contains("powered-machine status tooltips"), "The manifest must mention manual crushing and powered-machine status tooltips.");
+    Assert(root.GetProperty("version").GetString() == "1.6.0", "The mod version must be 1.6.0.");
+    Assert(
+        root.GetProperty("description").GetString()!.Contains("explosive drilling") &&
+        root.GetProperty("description").GetString()!.Contains("manual crushing") &&
+        root.GetProperty("description").GetString()!.Contains("powered-machine status tooltips"),
+        "The manifest must mention explosive drilling, manual crushing, and powered-machine status tooltips.");
     var dependencies = root.GetProperty("dependencies");
     Assert(dependencies.GetProperty("interestingme").GetString() == "1.0.16", "InterestingME dependency must be exact.");
     Assert(dependencies.GetProperty("materialneeds").GetString() == "2.0.0", "Material Needs dependency must be exact.");
     Assert(dependencies.GetProperty("bricklayers").GetString() == "3.2.2", "Bricklayers dependency must be exact.");
 }
 
-Console.WriteLine($"PASS: {recipeCodes.Length} explicit door recipes, {materialNeedsPaths.Length} Material Needs variants, {gratingPaths.Length} furnace grating variants, Bricklayers compatibility, manual muck hammer gates/progression/serialization/metadata, tier gates, exclusions, signatures, and universal manifest checks.");
+Console.WriteLine($"PASS: {recipeCodes.Length} explicit door recipes, {materialNeedsPaths.Length} Material Needs mudbrick variants, {materialNeedsGeologyRockVariants.Length} Material Needs Geology explosive-drilling rock variants, {gratingPaths.Length} furnace grating variants, Bricklayers compatibility, manual muck hammer gates/progression/serialization/metadata, tier gates, exclusions, signatures, and universal manifest checks.");
 
 class NullCoreApiProxy : DispatchProxy
 {
