@@ -20,6 +20,11 @@ public sealed class MaterialNeedsFurnacePatchSystem : ModSystem
 
     private Harmony? harmony;
 
+    public override void StartPre(ICoreAPI api)
+    {
+        OreOnlyRockMuck.LoadConfig(api);
+    }
+
     private static readonly HashSet<string> MaterialNeedsTierOneMudbrickPaths = new(StringComparer.Ordinal)
     {
         "brownmudbrick-light",
@@ -95,6 +100,7 @@ public sealed class MaterialNeedsFurnacePatchSystem : ModSystem
             new[] { typeof(string) },
             nameof(IsRefractoryBrickGrating),
             "(string)");
+        OreOnlyRockMuck.TryInitialize(harmony, api);
         ManualMuckCrusher.TryInitialize(harmony, api);
         ImePowerTooltip.TryInitialize(harmony, api);
     }

@@ -38,6 +38,17 @@ var modAssembly = AssemblyLoadContext.Default.LoadFromAssemblyPath(modPath);
 var interestingAssembly = AssemblyLoadContext.Default.LoadFromAssemblyPath(interestingMePath);
 var survivalAssembly = AssemblyLoadContext.Default.LoadFromAssemblyPath(survivalModPath);
 var systemType = modAssembly.GetType("InterestingMeMaterialNeedsFurnacePatch.MaterialNeedsFurnacePatchSystem")!;
+var oreOnlyRockMuckType = modAssembly.GetType("InterestingMeMaterialNeedsFurnacePatch.OreOnlyRockMuck")!;
+var oreOnlyRockMuckConfigType = modAssembly.GetType("InterestingMeMaterialNeedsFurnacePatch.OreOnlyRockMuckConfig")!;
+var shouldRemoveRockMuck = oreOnlyRockMuckType.GetMethod("ShouldRemoveRockMuck", BindingFlags.Static | BindingFlags.NonPublic)!;
+var filterStoneLayers = oreOnlyRockMuckType.GetMethod("FilterStoneLayers", BindingFlags.Static | BindingFlags.NonPublic)!;
+var oreOnlyConfig = Activator.CreateInstance(oreOnlyRockMuckConfigType)!;
+Assert(
+    (bool)oreOnlyRockMuckConfigType.GetProperty("OnlyOreBlocksCreateMuck")!.GetValue(oreOnlyConfig)!,
+    "The self-contained ore-only rock muck mechanism must default to enabled.");
+Assert(
+    (string)oreOnlyRockMuckType.GetField("ConfigFileName", BindingFlags.Static | BindingFlags.NonPublic)!.GetRawConstantValue()! == "imeolendrilpatch.json",
+    "The ore-only mechanism must use the mod-owned configuration file.");
 var lowTempPostfix = systemType.GetMethod("IsMaterialNeedsTierOneMudbrick", BindingFlags.Static | BindingFlags.NonPublic)!;
 var glazedLowTempPostfix = systemType.GetMethod("IsBricklayersTierTwoGlazedBrick", BindingFlags.Static | BindingFlags.NonPublic)!;
 var lowTempGratePostfix = systemType.GetMethod("IsRefractoryBrickGrating", BindingFlags.Static | BindingFlags.NonPublic)!;
@@ -130,6 +141,9 @@ object NewManualProgress() => Activator.CreateInstance(manualProgressType)!;
 string AdvanceManualStrike(object progress, double roll) =>
     advanceManualStrike.Invoke(null, new[] { progress, (object)roll })!.ToString()!;
 
+bool ShouldRemoveRockMuck(bool mechanismEnabled, string? oreCode, string? stoneCode) =>
+    (bool)shouldRemoveRockMuck.Invoke(null, new object?[] { mechanismEnabled, oreCode, stoneCode })!;
+
 var materialNeedsPaths = new[]
 {
     "brownmudbrick-light", "brownmudbrick-dark",
@@ -181,6 +195,11 @@ var materialNeedsGeologyRockVariants = new[]
 {
     "arenite", "arkose", "komatiite", "marl", "monzonite",
     "pyroxenite", "serpentinite", "syenite", "tufa", "wacke"
+};
+var geologyAdditionsRockVariants = new[]
+{
+    "amphibolite", "diorite", "dolostone", "gabbro", "gneiss", "jade", "jasper",
+    "migmatite", "mudstone", "pumice", "quartzite", "rhyolite", "schist", "siltstone"
 };
 
 var recipePath = Path.Combine(
@@ -234,6 +253,26 @@ var materialNeedsGeologyPatchPath = Path.Combine(
     "muck-drops",
     "mngeology-stone.json");
 Assert(File.Exists(materialNeedsGeologyPatchPath), "The Material Needs Geology explosive-drilling compatibility patch is missing.");
+var vanillaRockDropPath = Path.Combine(
+    repositoryRoot,
+    "references",
+    "interestingme-v1.0.16",
+    "assets",
+    "interestingme",
+    "config",
+    "muck-drops",
+    "vanilla-stone.json");
+Assert(File.Exists(vanillaRockDropPath), "The InterestingME vanilla rock muck-drop fixture is missing.");
+var geologyAdditionsDropPath = Path.Combine(
+    repositoryRoot,
+    "references",
+    "interestingme-v1.0.16",
+    "assets",
+    "interestingme",
+    "config",
+    "muck-drops",
+    "geoaddons-stone.json");
+Assert(File.Exists(geologyAdditionsDropPath), "The InterestingME Geology Additions muck-drop fixture is missing.");
 using (var materialNeedsGeologyFixture = JsonDocument.Parse(File.ReadAllText(materialNeedsGeologyDropPath)))
 using (var materialNeedsGeologyPatch = JsonDocument.Parse(File.ReadAllText(materialNeedsGeologyPatchPath)))
 {
@@ -245,6 +284,11 @@ using (var materialNeedsGeologyPatch = JsonDocument.Parse(File.ReadAllText(mater
         .ToArray();
     Assert(fixtureVariants.SequenceEqual(materialNeedsGeologyRockVariants), "The Material Needs Geology fixture must contain exactly its ten rock variants.");
     Assert(fixture.GetProperty("entries").EnumerateArray().All(entry => entry.GetProperty("stoneCode").GetString() == entry.GetProperty("blockCode").GetString()), "Every Material Needs Geology rock entry must preserve its exact host-rock code.");
+    Assert(
+        fixture.GetProperty("entries").EnumerateArray().All(entry =>
+            entry.GetProperty("stoneLayers").GetProperty("avg").GetInt32() == 6 &&
+            entry.GetProperty("stoneLayers").GetProperty("var").GetInt32() == 1),
+        "Every Material Needs Geology rock must retain the expected six-layer average and one-layer variance.");
 
     var operations = materialNeedsGeologyPatch.RootElement.EnumerateArray().ToArray();
     Assert(operations.Length == 1, "The Material Needs Geology compatibility patch must contain one exact operation.");
@@ -253,6 +297,58 @@ using (var materialNeedsGeologyPatch = JsonDocument.Parse(File.ReadAllText(mater
     Assert(operation.GetProperty("op").GetString() == "replace", "The compatibility patch must replace only the broken mod gate.");
     Assert(operation.GetProperty("path").GetString() == "/requiresMod", "The compatibility patch must modify only the top-level mod gate.");
     Assert(operation.GetProperty("value").GetString() == "mngeology", "Material Needs Geology entries must be gated by the mngeology mod ID.");
+}
+using (var vanillaRockFixture = JsonDocument.Parse(
+    File.ReadAllText(vanillaRockDropPath),
+    new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip }))
+using (var materialNeedsGeologyFixture = JsonDocument.Parse(File.ReadAllText(materialNeedsGeologyDropPath)))
+using (var geologyAdditionsFixture = JsonDocument.Parse(File.ReadAllText(geologyAdditionsDropPath)))
+{
+    var vanillaEntries = vanillaRockFixture.RootElement.EnumerateArray().ToArray();
+    var vanillaRockCodes = vanillaEntries.Take(22)
+        .Select(entry => entry.GetProperty("blockCode").GetString()!)
+        .ToArray();
+    Assert(
+        vanillaRockCodes.Length == 22 && vanillaRockCodes.All(code => code.StartsWith("game:rock-", StringComparison.Ordinal)),
+        "The InterestingME fixture must retain exactly its 22 explicit vanilla rock entries.");
+    Assert(
+        vanillaEntries[22].GetProperty("blockCode").GetString() == "game:crackedrock-*",
+        "The vanilla fixture must retain the cracked-rock wildcard after its exact rock entries.");
+    Assert(
+        vanillaEntries[23].GetProperty("blockCode").GetString() == "interestingoregen:saltpeterore",
+        "The non-rock saltpeter entry must remain outside the vanilla rock allowlist.");
+
+    var materialNeedsGeologyCodes = materialNeedsGeologyFixture.RootElement.GetProperty("entries")
+        .EnumerateArray()
+        .Select(entry => entry.GetProperty("blockCode").GetString()!)
+        .ToArray();
+    Assert(
+        materialNeedsGeologyCodes.SequenceEqual(materialNeedsGeologyRockVariants.Select(variant => $"game:rock-{variant}")),
+        "The ore-only allowlist must exactly match all ten Material Needs Geology fixture rocks.");
+
+    var geologyAdditionsCodes = geologyAdditionsFixture.RootElement.GetProperty("entries")
+        .EnumerateArray()
+        .Select(entry => entry.GetProperty("blockCode").GetString()!)
+        .ToArray();
+    Assert(
+        geologyAdditionsCodes.SequenceEqual(geologyAdditionsRockVariants.Select(variant => $"game:rock-{variant}")),
+        "The ore-only allowlist must exactly match all 14 Geology Additions fixture rocks.");
+
+    var supportedRockCodes = vanillaRockCodes
+        .Concat(materialNeedsGeologyCodes)
+        .Concat(geologyAdditionsCodes)
+        .ToHashSet(StringComparer.Ordinal);
+    Assert(supportedRockCodes.Count == 46, "The three fixture-backed rock groups must contain 46 unique paths.");
+    Assert(
+        supportedRockCodes.All(code => ShouldRemoveRockMuck(true, null, code)),
+        "Enabled ore-only mode must suppress standalone muck for every fixture-backed rock.");
+    Assert(
+        supportedRockCodes.All(code => !ShouldRemoveRockMuck(true, "game:ore-nativecopper", code)),
+        "Ore blocks must retain their muck composition even when their host rock is supported.");
+    Assert(!ShouldRemoveRockMuck(false, null, vanillaRockCodes[0]), "Disabling the mechanism must preserve standalone rock muck.");
+    Assert(!ShouldRemoveRockMuck(true, null, "game:rock-unsupported"), "Unknown rock paths must remain untouched.");
+    Assert(!ShouldRemoveRockMuck(true, null, "interestingoregen:saltpeterore"), "Non-rock mineral entries must remain untouched.");
+    Assert(!ShouldRemoveRockMuck(true, null, null), "A missing stone code must fail safely without filtering muck.");
 }
 using (var bricklayers = JsonDocument.Parse(File.ReadAllText(bricklayersRecipePath)))
 {
@@ -697,6 +793,36 @@ var highTempBrickTargetMethod = highTempType.GetMethod(
     modifiers: null);
 Assert(highTempBrickTargetMethod is not null && highTempBrickTargetMethod.ReturnType == typeof(bool) && highTempBrickTargetMethod.IsPrivate && highTempBrickTargetMethod.IsStatic,
     "InterestingME high-temperature brick validator signature changed.");
+
+var dropMuckBehaviorType = interestingAssembly.GetType("IME.BlockBehaviorDropMuck")!;
+var buildCompositionTargetMethod = dropMuckBehaviorType.GetMethod(
+    "BuildComposition",
+    BindingFlags.Static | BindingFlags.NonPublic,
+    binder: null,
+    types: new[]
+    {
+        typeof(IWorldAccessor),
+        typeof(Vintagestory.API.MathTools.NatFloat),
+        typeof(Vintagestory.API.MathTools.NatFloat),
+        typeof(string),
+        typeof(string)
+    },
+    modifiers: null);
+Assert(
+    buildCompositionTargetMethod is not null &&
+    buildCompositionTargetMethod.IsAssembly &&
+    buildCompositionTargetMethod.IsStatic &&
+    buildCompositionTargetMethod.ReturnType == muckCompositionType,
+    "InterestingME's shared normal-mining and blasting composition target changed.");
+var filterParameters = filterStoneLayers.GetParameters();
+Assert(
+    filterStoneLayers.ReturnType == typeof(void) &&
+    filterParameters.Length == 3 &&
+    filterParameters[0].Name == "stoneLayers" &&
+    filterParameters[0].ParameterType == typeof(Vintagestory.API.MathTools.NatFloat).MakeByRefType() &&
+    filterParameters[1].Name == "oreCode" && filterParameters[1].ParameterType == typeof(string) &&
+    filterParameters[2].Name == "stoneCode" && filterParameters[2].ParameterType == typeof(string),
+    "The ore-only Harmony prefix must bind exactly to the three composition arguments it filters.");
 foreach (var path in gratingPaths)
 {
     Assert((bool)lowTempGrateTargetMethod.Invoke(null, new object?[] { path })!, $"IME low-temperature grate validator should accept {path}.");
@@ -780,8 +906,11 @@ Assert((string)appendPowerStatus.Invoke(null, new object?[] { composedPoweredToo
 
 var system = (ModSystem)Activator.CreateInstance(systemType)!;
 var api = DispatchProxy.Create<ICoreAPI, NullCoreApiProxy>();
+system.StartPre(api);
 system.Start(api);
 var apiProxy = (NullCoreApiProxy)(object)api;
+Assert(apiProxy.LoadedConfigFileName == "imeolendrilpatch.json", "Startup must load the mod-owned ore-only configuration file.");
+Assert(apiProxy.StoredModConfig is not null, "Startup must create the default ore-only configuration when the file is absent.");
 Assert(apiProxy.RegisteredBehaviorName == manualBehaviorName, "The mod system must register the manual crusher behavior name.");
 Assert(apiProxy.RegisteredBehaviorType == manualCrusherType, "The mod system must register the manual crusher behavior type.");
 Assert(
@@ -790,6 +919,51 @@ Assert(
 Assert(
     !apiProxy.LogMessages.Any(message => message.Contains("Manual muck crushing disabled", StringComparison.Ordinal)),
     "The real Harmony lifecycle must not log that manual crushing was disabled.");
+var world = DispatchProxy.Create<IWorldAccessor, NullWorldAccessorProxy>();
+object BuildMuckComposition(string? oreCode, string stoneCode)
+{
+    return buildCompositionTargetMethod!.Invoke(
+        null,
+        new object?[]
+        {
+            world,
+            new Vintagestory.API.MathTools.NatFloat(
+                6,
+                0,
+                Vintagestory.API.MathTools.EnumDistribution.UNIFORM),
+            null,
+            oreCode,
+            stoneCode
+        })!;
+}
+var compositionTotalLayers = muckCompositionType.GetProperty("TotalLayers")!;
+Assert(
+    (int)compositionTotalLayers.GetValue(BuildMuckComposition(null, "game:rock-granite"))! == 0,
+    "The real patched composition path must produce no muck for a supported standalone vanilla rock.");
+Assert(
+    (int)compositionTotalLayers.GetValue(BuildMuckComposition(null, "game:rock-syenite"))! == 0,
+    "The real patched composition path must produce no muck for a Material Needs Geology rock.");
+Assert(
+    (int)compositionTotalLayers.GetValue(BuildMuckComposition(null, "game:rock-amphibolite"))! == 0,
+    "The real patched composition path must produce no muck for a Geology Additions rock.");
+Assert(
+    (int)compositionTotalLayers.GetValue(BuildMuckComposition("game:ore-nativecopper", "game:rock-granite"))! == 6,
+    "The real patched composition path must preserve host-rock muck when the source is an ore block.");
+Assert(
+    (int)compositionTotalLayers.GetValue(BuildMuckComposition(null, "game:rock-unsupported"))! == 6,
+    "The real patched composition path must preserve unsupported standalone rock entries.");
+var disabledOreOnlyConfig = Activator.CreateInstance(oreOnlyRockMuckConfigType)!;
+oreOnlyRockMuckConfigType.GetProperty("OnlyOreBlocksCreateMuck")!.SetValue(disabledOreOnlyConfig, false);
+apiProxy.ModConfigToLoad = disabledOreOnlyConfig;
+system.StartPre(api);
+Assert(
+    (int)compositionTotalLayers.GetValue(BuildMuckComposition(null, "game:rock-granite"))! == 6,
+    "Loading OnlyOreBlocksCreateMuck=false must restore standalone rock muck.");
+apiProxy.ModConfigToLoad = Activator.CreateInstance(oreOnlyRockMuckConfigType)!;
+system.StartPre(api);
+Assert(
+    (int)compositionTotalLayers.GetValue(BuildMuckComposition(null, "game:rock-granite"))! == 0,
+    "Loading OnlyOreBlocksCreateMuck=true must enable standalone rock muck filtering.");
 var harmonyType = AssemblyLoadContext.Default.Assemblies.Select(assembly => assembly.GetType("HarmonyLib.Harmony")).FirstOrDefault(type => type is not null)!;
 var getPatchInfo = harmonyType.GetMethod("GetPatchInfo", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)!;
 bool IsOwnedPatch(MethodBase method)
@@ -811,6 +985,9 @@ Assert(
 Assert(
     new[] { lowTempGrateTargetMethod!, roastingGrateTargetMethod! }.All(IsOwnedPatch),
     "The low-temperature and roasting-furnace grate validators must be Harmony-patched after startup.");
+Assert(
+    IsOwnedPatch(buildCompositionTargetMethod!),
+    "The shared normal-mining and blasting composition method must be Harmony-patched after startup.");
 Assert(!IsOwnedPatch(highTempBrickTargetMethod!), "The high-temperature furnace brick validator must remain untouched.");
 
 var poweredMachineGate = powerTooltipType.GetMethod("IsPoweredMachine", BindingFlags.Static | BindingFlags.NonPublic)!;
@@ -909,25 +1086,31 @@ Assert(
 Assert(
     !IsOwnedPatch(roastingGrateTargetMethod!),
     "Disposing the mod system must remove its roasting-furnace grate Harmony patch.");
+Assert(
+    !IsOwnedPatch(buildCompositionTargetMethod!),
+    "Disposing the mod system must remove its ore-only rock muck Harmony patch.");
 
 using (var manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(repositoryRoot, "modinfo.json"))))
 {
     var root = manifest.RootElement;
     Assert(root.GetProperty("modid").GetString() == "imeolendrilpatch", "The mod ID must be imeolendrilpatch.");
     Assert(root.GetProperty("side").GetString() == "Universal", "The mod must declare Universal loading.");
-    Assert(root.GetProperty("version").GetString() == "1.6.0", "The mod version must be 1.6.0.");
+    Assert(root.GetProperty("version").GetString() == "1.7.0", "The mod version must be 1.7.0.");
     Assert(
         root.GetProperty("description").GetString()!.Contains("explosive drilling") &&
+        root.GetProperty("description").GetString()!.Contains("configurable ore-only muck behavior") &&
+        root.GetProperty("description").GetString()!.Contains("Geology Additions rocks") &&
         root.GetProperty("description").GetString()!.Contains("manual crushing") &&
         root.GetProperty("description").GetString()!.Contains("powered-machine status tooltips"),
-        "The manifest must mention explosive drilling, manual crushing, and powered-machine status tooltips.");
+        "The manifest must mention explosive drilling, configurable ore-only behavior for Geology Additions, manual crushing, and powered-machine status tooltips.");
     var dependencies = root.GetProperty("dependencies");
     Assert(dependencies.GetProperty("interestingme").GetString() == "", "InterestingME dependency must require only that the mod is present.");
     Assert(dependencies.GetProperty("materialneeds").GetString() == "2.0.0", "Material Needs dependency must be exact.");
     Assert(dependencies.GetProperty("bricklayers").GetString() == "3.2.2", "Bricklayers dependency must be exact.");
+    Assert(!dependencies.TryGetProperty("interestingmeconfig", out _), "The mod must not depend on InterestingMeConfig.");
 }
 
-Console.WriteLine($"PASS: {recipeCodes.Length} explicit door recipes, {materialNeedsPaths.Length} Material Needs mudbrick variants, {materialNeedsGeologyRockVariants.Length} Material Needs Geology explosive-drilling rock variants, {gratingPaths.Length} furnace grating variants, Bricklayers compatibility, manual muck hammer gates/progression/serialization/metadata, tier gates, exclusions, signatures, and universal manifest checks.");
+Console.WriteLine($"PASS: {recipeCodes.Length} explicit door recipes, {materialNeedsPaths.Length} Material Needs mudbrick variants, 46 configurable vanilla/Material Needs Geology/Geology Additions ore-only rock paths, {gratingPaths.Length} furnace grating variants, Bricklayers compatibility, manual muck hammer gates/progression/serialization/metadata, tier gates, exclusions, signatures, and universal manifest checks.");
 
 class NullCoreApiProxy : DispatchProxy
 {
@@ -935,6 +1118,9 @@ class NullCoreApiProxy : DispatchProxy
 
     internal string? RegisteredBehaviorName { get; private set; }
     internal Type? RegisteredBehaviorType { get; private set; }
+    internal object? ModConfigToLoad { get; set; }
+    internal object? StoredModConfig { get; private set; }
+    internal string? LoadedConfigFileName { get; private set; }
     internal IReadOnlyList<string> LogMessages => logger is null
         ? Array.Empty<string>()
         : ((NullLoggerProxy)(object)logger).Messages;
@@ -950,6 +1136,16 @@ class NullCoreApiProxy : DispatchProxy
         {
             RegisteredBehaviorName = (string?)args?[0];
             RegisteredBehaviorType = (Type?)args?[1];
+            return null;
+        }
+        if (targetMethod?.Name == "LoadModConfig")
+        {
+            LoadedConfigFileName = (string?)args?[0];
+            return ModConfigToLoad;
+        }
+        if (targetMethod?.Name == "StoreModConfig")
+        {
+            StoredModConfig = args?[0];
             return null;
         }
 
@@ -968,5 +1164,20 @@ class NullLoggerProxy : DispatchProxy
     {
         if (args?.FirstOrDefault() is string message) Messages.Add(message);
         return null;
+    }
+}
+
+class NullWorldAccessorProxy : DispatchProxy
+{
+    private readonly Random random = new(12345);
+
+    protected override object? Invoke(MethodInfo? targetMethod, object?[]? args)
+    {
+        if (targetMethod?.Name == "get_Rand") return random;
+        if (targetMethod?.Name == "get_Side") return EnumAppSide.Server;
+        if (targetMethod?.ReturnType == typeof(void)) return null;
+        return targetMethod?.ReturnType.IsValueType == true
+            ? Activator.CreateInstance(targetMethod.ReturnType)
+            : null;
     }
 }
