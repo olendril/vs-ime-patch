@@ -18,9 +18,9 @@ namespace InterestingMeMaterialNeedsFurnacePatch;
 public sealed class ManualMuckCrusher : CollectibleBehavior
 {
     internal const string BehaviorName = "ManualMuckCrusher";
-    internal const string HarmonyId = "ime-olendril-patch";
+    internal const string HarmonyId = "imeolendrilpatch";
     internal const string HammerTargetTypeName = "Vintagestory.GameContent.ItemHammer";
-    internal const string ProgressTreeKey = "ime-olendril-patch:manual-muck-crusher-strikes";
+    internal const string ProgressTreeKey = "imeolendrilpatch:manual-muck-crusher-strikes";
     internal const int RequiredStrikes = 5;
 
     private static readonly HashSet<string> EligibleHammerPaths = new(StringComparer.Ordinal)

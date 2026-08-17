@@ -14,7 +14,7 @@ namespace InterestingMeMaterialNeedsFurnacePatch;
 /// </summary>
 internal static class ImePowerTooltip
 {
-    private const string HarmonyId = "ime-olendril-patch";
+    private const string HarmonyId = "imeolendrilpatch";
     private const string PoweredMachineTypeName = "IME.PoweredMachineBlockEntity";
     private const string DescribedBlockTypeName = "IME.BlockIMEDescribed";
     private const string FlatConveyorTypeName = "IME.BlockConveyorFlat";
@@ -32,7 +32,7 @@ internal static class ImePowerTooltip
     private const string ToTreeAttributesMethodName = "ToTreeAttributes";
     private const string FromTreeAttributesMethodName = "FromTreeAttributes";
 
-    internal const string PowerTreeKey = "ime-olendril-patch:ime-powered";
+    internal const string PowerTreeKey = "imeolendrilpatch:ime-powered";
     internal const string PoweredLangKey = "ime-powered";
     internal const string UnpoweredLangKey = "ime-unpowered";
     private const string PoweredFallback = "IME power: Powered";

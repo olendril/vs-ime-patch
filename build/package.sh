@@ -4,7 +4,7 @@ set -euo pipefail
 project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 configuration="${1:-Release}"
 output_dir="$project_root/artifacts/package"
-package_name="ime-olendril-patch"
+package_name="imeolendrilpatch"
 vintage_story_path="${VintageStoryPath:-${VINTAGE_STORY_PATH:?Set VintageStoryPath or VINTAGE_STORY_PATH first}}"
 
 dotnet build "$project_root/src/InterestingMeMaterialNeedsFurnacePatch.csproj" \

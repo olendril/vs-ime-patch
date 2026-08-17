@@ -186,7 +186,7 @@ var materialNeedsGeologyRockVariants = new[]
 var recipePath = Path.Combine(
     repositoryRoot,
     "assets",
-    "ime-olendril-patch",
+    "imeolendrilpatch",
     "recipes",
     "grid",
     "blocks",
@@ -195,7 +195,7 @@ Assert(File.Exists(recipePath), "The mod-owned low-temperature furnace door reci
 var screenRecipePath = Path.Combine(
     repositoryRoot,
     "assets",
-    "ime-olendril-patch",
+    "imeolendrilpatch",
     "recipes",
     "grid",
     "blocks",
@@ -228,7 +228,7 @@ Assert(File.Exists(materialNeedsGeologyDropPath), "The InterestingME Material Ne
 var materialNeedsGeologyPatchPath = Path.Combine(
     repositoryRoot,
     "assets",
-    "ime-olendril-patch",
+    "imeolendrilpatch",
     "patches",
     "config",
     "muck-drops",
@@ -368,7 +368,7 @@ Assert(!IsCoarseSingleLayer(true, "modded", "muckpile", "coarse", 1), "A modded 
 var manualPatchPath = Path.Combine(
     repositoryRoot,
     "assets",
-    "ime-olendril-patch",
+    "imeolendrilpatch",
     "patches",
     "itemtypes",
     "tool",
@@ -385,7 +385,7 @@ using (var manualPatch = JsonDocument.Parse(File.ReadAllText(manualPatchPath)))
     Assert(behaviorOperation.GetProperty("value").GetProperty("name").GetString() == manualBehaviorName, "The hammer patch must use the registered manual crusher behavior name.");
 }
 
-var languagePath = Path.Combine(repositoryRoot, "assets", "ime-olendril-patch", "lang", "en.json");
+var languagePath = Path.Combine(repositoryRoot, "assets", "imeolendrilpatch", "lang", "en.json");
 using (var language = JsonDocument.Parse(File.ReadAllText(languagePath)))
 {
     foreach (var key in new[]
@@ -535,7 +535,7 @@ var serializedPile = Activator.CreateInstance(muckPileType)!;
 setManualProgress.Invoke(null, new object?[] { serializedPile, 3 });
 var serializedTree = new Vintagestory.API.Datastructures.TreeAttribute();
 saveManualProgress.Invoke(null, new object?[] { serializedPile, serializedTree });
-Assert(serializedTree.GetInt("ime-olendril-patch:manual-muck-crusher-strikes", 0) == 3, "Manual progress must serialize with the muck block entity.");
+Assert(serializedTree.GetInt("imeolendrilpatch:manual-muck-crusher-strikes", 0) == 3, "Manual progress must serialize with the muck block entity.");
 var reloadedPile = Activator.CreateInstance(muckPileType)!;
 loadManualProgress.Invoke(null, new object?[] { reloadedPile, serializedTree, null });
 Assert((int)getManualProgress.Invoke(null, new[] { reloadedPile })! == 3, "Serialized manual progress must reload onto the pile, not a player.");
@@ -763,7 +763,7 @@ Assert(blockEntityToTree is not null && blockEntityToTree.ReturnType == typeof(v
 Assert(blockEntityFromTree is not null && blockEntityFromTree.ReturnType == typeof(void) && blockEntityFromTree.IsVirtual,
     "Vintage Story BlockEntity.FromTreeAttributes signature changed.");
 
-using (var language = JsonDocument.Parse(File.ReadAllText(Path.Combine(repositoryRoot, "assets", "ime-olendril-patch", "lang", "en.json"))))
+using (var language = JsonDocument.Parse(File.ReadAllText(Path.Combine(repositoryRoot, "assets", "imeolendrilpatch", "lang", "en.json"))))
 {
     Assert(language.RootElement.GetProperty("ime-powered").GetString() == "IME power: Powered", "The powered localization must be exact English text.");
     Assert(language.RootElement.GetProperty("ime-unpowered").GetString() == "IME power: Unpowered", "The unpowered localization must be exact English text.");
@@ -796,7 +796,7 @@ bool IsOwnedPatch(MethodBase method)
 {
     var patchInfo = getPatchInfo.Invoke(null, new object?[] { method });
     var owners = patchInfo?.GetType().GetProperty("Owners")?.GetValue(patchInfo) as IEnumerable;
-    return owners?.Cast<object>().Any(owner => string.Equals(owner.ToString(), "ime-olendril-patch", StringComparison.Ordinal)) == true;
+    return owners?.Cast<object>().Any(owner => string.Equals(owner.ToString(), "imeolendrilpatch", StringComparison.Ordinal)) == true;
 }
 Assert(
     new[] { "IME.BlockIMEDescribed", "IME.BlockConveyorFlat", "IME.BlockConveyorSplit", "IME.BlockBucketLiftOutput" }
@@ -913,7 +913,7 @@ Assert(
 using (var manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(repositoryRoot, "modinfo.json"))))
 {
     var root = manifest.RootElement;
-    Assert(root.GetProperty("modid").GetString() == "ime-olendril-patch", "The mod ID must be ime-olendril-patch.");
+    Assert(root.GetProperty("modid").GetString() == "imeolendrilpatch", "The mod ID must be imeolendrilpatch.");
     Assert(root.GetProperty("side").GetString() == "Universal", "The mod must declare Universal loading.");
     Assert(root.GetProperty("version").GetString() == "1.6.0", "The mod version must be 1.6.0.");
     Assert(

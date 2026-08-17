@@ -10,7 +10,7 @@ namespace InterestingMeMaterialNeedsFurnacePatch;
 /// </summary>
 public sealed class MaterialNeedsFurnacePatchSystem : ModSystem
 {
-    private const string HarmonyId = "ime-olendril-patch";
+    private const string HarmonyId = "imeolendrilpatch";
     private const string LowTempTargetTypeName = "IME.BlockEntityLowTempFurnaceDoor";
     private const string LowTempTargetMethodName = "IsValidTierBrick";
     private const string LowTempGrateTargetMethodName = "IsValidGrateBlock";
