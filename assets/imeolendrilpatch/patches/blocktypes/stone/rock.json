@@ -1,0 +1,29 @@
+[
+  {
+    "file": "game:blocktypes/stone/rock.json",
+    "op": "add",
+    "path": "/dropsByType",
+    "value": {
+      "rock-suevite": [
+        {
+          "type": "item",
+          "code": "stone-{rock}",
+          "quantity": { "avg": 2.5, "var": 0.5 }
+        },
+        {
+          "type": "item",
+          "code": "gem-diamond-rough",
+          "attributes": { "potential": "low" },
+          "quantity": { "avg": 0.005, "var": 0 }
+        }
+      ],
+      "*": [
+        {
+          "type": "item",
+          "code": "stone-{rock}",
+          "quantity": { "avg": 2.5, "var": 0.5 }
+        }
+      ]
+    }
+  }
+]

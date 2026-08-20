@@ -273,6 +273,27 @@ var geologyAdditionsDropPath = Path.Combine(
     "muck-drops",
     "geoaddons-stone.json");
 Assert(File.Exists(geologyAdditionsDropPath), "The InterestingME Geology Additions muck-drop fixture is missing.");
+var rockDropsPatchPath = Path.Combine(
+    repositoryRoot,
+    "assets",
+    "imeolendrilpatch",
+    "patches",
+    "blocktypes",
+    "stone",
+    "rock.json");
+Assert(File.Exists(rockDropsPatchPath), "The vanilla rock drops compatibility patch is missing.");
+using (var rockDropsPatch = JsonDocument.Parse(File.ReadAllText(rockDropsPatchPath)))
+{
+    var operations = rockDropsPatch.RootElement.EnumerateArray().ToArray();
+    Assert(operations.Length == 1, "The vanilla rock drops compatibility patch must contain one exact operation.");
+    var operation = operations[0];
+    Assert(operation.GetProperty("file").GetString() == "game:blocktypes/stone/rock.json", "The vanilla rock drops patch must target the game rock block.");
+    Assert(operation.GetProperty("op").GetString() == "add", "The vanilla rock drops patch must restore the removed drops table.");
+    Assert(operation.GetProperty("path").GetString() == "/dropsByType", "The vanilla rock drops patch must modify only the rock drops table.");
+    var dropsByType = operation.GetProperty("value");
+    Assert(dropsByType.GetProperty("*")[0].GetProperty("code").GetString() == "stone-{rock}", "Filtered rocks must restore vanilla small-stone drops.");
+    Assert(dropsByType.GetProperty("rock-suevite").GetArrayLength() == 2, "The restored rock drops table must retain suevite's diamond drop.");
+}
 using (var materialNeedsGeologyFixture = JsonDocument.Parse(File.ReadAllText(materialNeedsGeologyDropPath)))
 using (var materialNeedsGeologyPatch = JsonDocument.Parse(File.ReadAllText(materialNeedsGeologyPatchPath)))
 {
@@ -1095,7 +1116,7 @@ using (var manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(repositor
     var root = manifest.RootElement;
     Assert(root.GetProperty("modid").GetString() == "imeolendrilpatch", "The mod ID must be imeolendrilpatch.");
     Assert(root.GetProperty("side").GetString() == "Universal", "The mod must declare Universal loading.");
-    Assert(root.GetProperty("version").GetString() == "1.7.0", "The mod version must be 1.7.0.");
+    Assert(root.GetProperty("version").GetString() == "1.7.1", "The mod version must be 1.7.1.");
     Assert(
         root.GetProperty("description").GetString()!.Contains("explosive drilling") &&
         root.GetProperty("description").GetString()!.Contains("configurable ore-only muck behavior") &&
